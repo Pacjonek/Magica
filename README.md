@@ -1,37 +1,11 @@
-# Magica
+# Magica Magisk Installer
 
-Privilege Escalation PoC when seccomp is disabled for Android 10+.
+A classic one-click root solution (just like in the old days!) for Android 10 - 16.
+It uses Magica Privilege Escalation (which works for builds with disabled seccomp) to gain full root privileges and use it to install Magisk or any other flavor (like Magisk Alpha) using update-binary attached to installed Magisk APK.
 
-![Android CI](https://github.com/vvb2060/Magica/workflows/Android%20CI/badge.svg?branch=master)
+# Dedicated use case
 
-[Download (CI Artifacts)](https://github.com/vvb2060/Magica/actions?query=branch%3Amaster)
-
-## Usage
-
-```sh
-adb root
-adb shell setenforce 0
-adb shell stop
-adb shell start
-./gradlew :app:iR
-```
-
-## EXEC
-
-```sh
-adb shell am broadcast -n io.github.vvb2060.puellamagi/.CommandReceiver -a io.github.vvb2060.puellamagi.action.EXEC --es cmd id
-adb shell am broadcast -n io.github.vvb2060.puellamagi/.CommandReceiver -a io.github.vvb2060.puellamagi.action.EXEC --es cmd whoami
-adb shell 'am broadcast -n io.github.vvb2060.puellamagi/.CommandReceiver -a io.github.vvb2060.puellamagi.action.EXEC --es cmd "su -v"'
-```
-
-For commands with parameters, enclose them in quotation marks or run them directly in the adb shell.
-
-```sh
-adb shell
-am broadcast -n io.github.vvb2060.puellamagi/.CommandReceiver -a io.github.vvb2060.puellamagi.action.EXEC --es cmd "su -v"
-```
-
-The command result is returned in `Broadcast completed` output `data=`.
+Chinese Android radios, which very often have SELinux set to permissive mode so requirement of disabled seccomp is met.
 
 ## License
 
