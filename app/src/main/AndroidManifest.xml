@@ -14,8 +14,8 @@
         android:name=".App"
         android:directBootAware="true"
         android:icon="@android:drawable/sym_def_app_icon"
-        android:label="Magica"
-        android:theme="@android:style/Theme.DeviceDefault.DayNight"
+        android:label="Magica Magisk Installer"
+        android:theme="@android:style/Theme.DeviceDefault.Night"
         android:zygotePreloadName="io.github.vvb2060.puellamagi.AppZygote">
         <service
             android:name=".MagicaService"
