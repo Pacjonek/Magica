@@ -44,5 +44,6 @@ android {
 }
 
 dependencies {
-    implementation project(':libmagica') implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
+    implementation project(':libmagica')
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
 }
