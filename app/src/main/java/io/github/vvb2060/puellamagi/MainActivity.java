@@ -42,7 +42,7 @@ public final class MainActivity extends Activity {
             App.server = IRemoteService.Stub.asInterface(binder);
             Shell.enableVerboseLogging = BuildConfig.DEBUG;
             shell = Shell.Builder.create().setFlags(Shell.FLAG_NON_ROOT_SHELL).build();
-            check();
+            isRootAvailable();
             getRunningAppProcesses();
         }
 
@@ -73,11 +73,11 @@ public final class MainActivity extends Activity {
     void getRunningAppProcesses() {
         try {
             var processes = App.server.getRunningAppProcesses();
-            console.add("uid pid processName pkgList importance");
-            for (var process : processes) {
+            console.add("[DEBUG] uid pid processName pkgList importance");
+            for (var proc : processes) {
                 var str = String.format(Locale.ROOT, "%d %d %s %s %d",
-                        process.uid, process.pid, process.processName,
-                        Arrays.toString(process.pkgList), process.importance);
+                        proc.uid, proc.pid, proc.processName,
+                        Arrays.toString(proc.pkgList), proc.importance);
                 console.add(str);
             }
         } catch (RemoteException | SecurityException e) {
@@ -93,7 +93,7 @@ public final class MainActivity extends Activity {
         });
     }
 
-    void check() {
+    void isRootAvailable() {
         cmd("id");
         if (shell.isRoot()) {
             console.add(getString(R.string.root_shell_opened));
@@ -102,8 +102,11 @@ public final class MainActivity extends Activity {
             return;
         }
 
-//        var cmd = "ps -A 2>/dev/null | grep magiskd | grep -qv grep";
-//        var magiskd = ShellUtils.fastCmdResult(shell, cmd);
+        var cmd = "ps -A 2>/dev/null | grep magiskd | grep -qv grep";
+        var magiskInstalled = ShellUtils.fastCmdResult(shell, cmd);
+        if(magiskInstalled){
+            console.add("Previous Magisk installation detected.");
+        }
 //        if (magiskd) {
 //            console.add(getString(R.string.magiskd_running));
 //            killMagiskd();
@@ -114,7 +117,7 @@ public final class MainActivity extends Activity {
     }
 
 
-    @SuppressLint("SetTextI18n")
+    /* @SuppressLint("SetTextI18n")
     void killMagiskd() {
         binding.install.setOnClickListener(v -> {
             var cmd = "kill -9 $(pidof magiskd)";
@@ -127,19 +130,26 @@ public final class MainActivity extends Activity {
         });
         binding.install.setText("Kill magiskd");
         binding.install.setVisibility(View.VISIBLE);
-    }
+    } */
 
     @SuppressLint("SetTextI18n")
     void installMagisk() {
         ApplicationInfo info;
         try {
+            console.add("Querying for the installed Magisk app package (com.topjohnwu.magisk)...");
             info = getPackageManager().getApplicationInfo("com.topjohnwu.magisk", 0);
         } catch (PackageManager.NameNotFoundException e) {
             try {
                 info = getPackageManager().getApplicationInfo("io.github.vvb2060.magisk", 0);
             } catch (PackageManager.NameNotFoundException ex) {
-                console.add(getString(R.string.magisk_package_not_installed));
-                console.add(getString(R.string.requires_latest_magisk_app));
+                console.add("[ERROR] "+getString(R.string.magisk_package_not_installed));
+                console.add(getString(R.string.magisk_app_required));
+
+                // binding.install.setText("Try again");
+                // binding.install.setVisibility(View.VISIBLE);
+                // binding.install.setEnabled(true);
+
+
                 return;
             }
         }
@@ -149,18 +159,21 @@ public final class MainActivity extends Activity {
                 "sh /dev/tmp/magica/META-INF/com/google/android/update-binary dummy 1 " + info.publicSourceDir;
 
         try (var apk = new ZipFile(info.publicSourceDir)) {
+            console.add("Attempting to unpack the update-binary extra from installed Magisk APK resources...");
             var update = apk.getEntry("META-INF/com/google/android/update-binary");
             if (update != null) {
                 console.add(getString(R.string.tap_to_install_magisk));
+                console.add("[PROMPT] Ready for installation! At your command, sir!");
                 binding.install.setOnClickListener(v -> {
                     shell.newJob().add(cmd).to(console).submit(out -> {
                         if (out.isSuccess()) {
                             console.add(getString(R.string.tap_to_reboot));
                             binding.install.setOnClickListener(a -> cmd("reboot"));
-                            binding.install.setText("Reboot");
+                            console.add("[OK] Installation passed. After reboot, you should have a fully functional Magisk installation. You can uninstall this installer app");
+                            binding.install.setText("Reboot device");
                             binding.install.setEnabled(true);
                         } else {
-                            console.add(getString(R.string.failed_to_install));
+                            console.add("[ERROR] " + getString(R.string.failed_to_install));
                         }
                     });
                     binding.install.setEnabled(false);
@@ -168,11 +181,12 @@ public final class MainActivity extends Activity {
                 binding.install.setText("Install Magisk");
                 binding.install.setVisibility(View.VISIBLE);
             } else {
-                console.add(getString(R.string.requires_latest_magisk_app));
+                console.add("[ERROR] Installed Magisk APK has been found but not update-binary. Are you sure you have the latest version?");
+                return;
             }
         } catch (IOException e) {
-            Log.e(TAG, "installMagisk", e);
-            console.add(getString(R.string.cannot_extra_magisk));
+            Log.e(TAG, "MagicaMagiskInstaller", e);
+            console.add("[ERROR] Couldn't get update-binary extra from installed APK Magisk file. See logcat for more info. ");
         }
     }
 
